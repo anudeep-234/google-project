@@ -12,4 +12,9 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.use("/api/traffic", trafficRoutes);
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Running on port ${PORT}`));
+
+if (process.env.NODE_ENV !== "production") {
+	app.listen(PORT, () => console.log(`Running on port ${PORT}`));
+}
+
+export default app;
