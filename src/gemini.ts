@@ -2,9 +2,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-const apiKey = process.env.OPENROUTER_API_KEY
-  ?? (process.env.TOMTOM_API_KEY?.startsWith("sk-or-") ? process.env.TOMTOM_API_KEY : undefined);
-if (!apiKey) throw new Error("OPENROUTER_API_KEY is missing from .env");
 const model = process.env.OPENROUTER_MODEL ?? "google/gemini-2.5-flash";
 
 export interface ExtractedTrafficReport {
@@ -39,6 +36,9 @@ function parseModelJson<T>(rawText: string): T {
 }
 
 async function askOpenRouter(prompt: string): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY is missing from Vercel environment variables.");
+
   try {
     const response = await axios.post(
       "https://openrouter.ai/api/v1/chat/completions",
