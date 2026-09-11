@@ -1,0 +1,154 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wanderly | From signal to action</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+    :root { --ink: #102a43; --muted: #627d98; --paper: #eef6ff; --blue: #1769aa; --sky: #d9efff; --alert: #e05a47; --line: #c8dced; --white: #ffffff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: var(--paper); font-family: 'Space Grotesk', sans-serif; }
+    body::before { content: ''; position: fixed; inset: 0; pointer-events: none; opacity: .35; background-image: linear-gradient(#cfe3f4 1px, transparent 1px), linear-gradient(90deg, #cfe3f4 1px, transparent 1px); background-size: 42px 42px; mask-image: linear-gradient(to bottom, black, transparent 80%); }
+    main { position: relative; max-width: 1180px; margin: auto; padding: 30px 28px 70px; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 76px; }
+    .brand { display: flex; gap: 11px; align-items: center; font-size: 1.2rem; font-weight: 700; letter-spacing: -.04em; }
+    .mark { width: 28px; height: 28px; border: 2px solid var(--ink); border-radius: 50%; position: relative; }
+    .mark::after { content: ''; position: absolute; width: 8px; height: 8px; background: var(--blue); border-radius: 50%; top: 8px; left: 8px; }
+    .status { color: var(--muted); font: 500 .7rem 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .12em; }
+    .status::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 8px; border-radius: 50%; background: #2f9e72; }
+    .intro { max-width: 760px; margin-bottom: 42px; }
+    .eyebrow { color: var(--blue); font: 500 .72rem 'DM Mono', monospace; letter-spacing: .12em; text-transform: uppercase; }
+    h1 { max-width: 760px; margin: 13px 0 18px; font-size: clamp(3rem, 8vw, 6.7rem); line-height: .9; letter-spacing: -.08em; font-weight: 600; }
+    .intro p { max-width: 570px; color: var(--muted); font-size: 1.05rem; line-height: 1.55; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(300px, .7fr); gap: 18px; align-items: start; }
+    .panel { background: var(--white); border: 1px solid var(--line); border-radius: 4px; padding: 25px; box-shadow: 0 18px 50px rgba(23, 105, 170, .09); }
+    .panel h2 { margin: 0 0 7px; font-size: 1.35rem; letter-spacing: -.04em; }
+    .panel-copy { color: var(--muted); margin: 0 0 24px; font-size: .9rem; line-height: 1.45; }
+    label { display: block; color: var(--muted); font: 500 .65rem 'DM Mono', monospace; letter-spacing: .09em; text-transform: uppercase; margin: 17px 0 7px; }
+    input, textarea { width: 100%; border: 1px solid var(--line); background: #fbfcf7; border-radius: 2px; padding: 13px 14px; color: var(--ink); font: 400 .95rem 'Space Grotesk', sans-serif; outline: none; }
+    textarea { min-height: 122px; resize: vertical; line-height: 1.5; }
+    input:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #d9efff; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+    button { border: 0; border-radius: 2px; padding: 14px 17px; margin-top: 18px; cursor: pointer; background: var(--blue); color: white; font: 600 .85rem 'Space Grotesk', sans-serif; }
+    button:hover { background: #0e4f82; }
+    button:disabled { cursor: wait; opacity: .55; }
+    .demo-row { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+    .demo-row button { margin: 0; padding: 8px 10px; color: var(--ink); background: transparent; border: 1px solid var(--line); font: 400 .72rem 'DM Mono', monospace; }
+    .demo-row button:hover { background: var(--sky); border-color: var(--sky); }
+    .result { min-height: 270px; background: var(--ink); color: white; border-radius: 4px; padding: 25px; }
+    .result.empty { background: #dcecf9; color: var(--muted); display: grid; place-items: center; text-align: center; }
+    .result h3 { margin: 0 0 22px; color: #8bd3ff; font-size: .75rem; font: 500 .7rem 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .12em; }
+    .signal { display: grid; grid-template-columns: 1fr 1fr; gap: 20px 12px; }
+    .metric small { display: block; color: #9ca9a0; font: 500 .64rem 'DM Mono', monospace; text-transform: uppercase; margin-bottom: 5px; }
+    .metric strong { display: block; font-size: 1.25rem; text-transform: capitalize; }
+    .confidence { height: 5px; background: #4a564e; margin-top: 8px; }
+    .confidence span { display: block; height: 100%; background: #63c5ff; }
+    .reasoning { border-top: 1px solid #3c4941; margin-top: 22px; padding-top: 17px; color: #c8d0c9; font-size: .82rem; line-height: 1.5; }
+    .capsule { border: 1px solid #526057; margin-top: 20px; padding: 14px; }
+    .capsule-title { color: #8bd3ff; font: 500 .65rem 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; }
+    .capsule p { color: #f7f8ef; font-size: .82rem; line-height: 1.5; margin: 9px 0 12px; }
+    .capsule button { background: #8bd3ff; color: var(--ink); margin: 0; padding: 8px 10px; font-size: .72rem; }
+    .route { margin-top: 18px; }
+    .route button { width: 100%; background: var(--blue); color: white; }
+    .route-result { color: var(--muted); font-size: .85rem; line-height: 1.6; }
+    .route-result strong { color: var(--ink); }
+    .live-watch { display: flex; justify-content: space-between; gap: 12px; align-items: center; border: 1px solid var(--line); padding: 10px 12px; margin-top: 14px; font: 500 .65rem 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; }
+    .live-watch strong { color: #2f8f68; }
+    .live-watch.heavy strong { color: var(--alert); }
+    #responseMap { height: 290px; margin: 18px -25px -25px; z-index: 1; filter: saturate(.8); }
+    .map-key { display: flex; gap: 14px; color: var(--muted); font: 500 .62rem 'DM Mono', monospace; text-transform: uppercase; margin-top: 16px; }
+    .map-key span::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: var(--alert); }
+    .map-key span:last-child::before { background: #8bd3ff; border: 1px solid var(--ink); }
+    .emergency-mode { display: flex; gap: 9px; align-items: center; color: var(--muted); font-size: .76rem; margin-top: 15px; }
+    .emergency-mode input { width: auto; accent-color: var(--blue); }
+    .emergency-mode strong { color: var(--ink); }
+    .region-panel { margin-top: 18px; }
+    .region-select { display: flex; gap: 10px; align-items: end; }
+    .region-select > div { flex: 1; }
+    .region-select button { margin: 0; white-space: nowrap; }
+    .hotspot { display: grid; grid-template-columns: 1fr auto; gap: 8px 15px; align-items: center; border-top: 1px solid var(--line); padding: 12px 0; font-size: .82rem; }
+    .hotspot:first-child { border-top: 0; }
+    .hotspot small { display: block; color: var(--muted); font: 500 .62rem 'DM Mono', monospace; margin-top: 3px; }
+    .hotspot strong { font-size: .9rem; }
+    .hotspot .bar { grid-column: 1 / -1; height: 5px; background: #e1edf7; }
+    .hotspot .bar span { display: block; height: 100%; background: #4e9fd1; }
+    .hotspot.heavy .bar span { background: var(--alert); }
+    .hotspot.heavy strong { color: #c14d35; }
+    .region-meta { color: var(--muted); font: 500 .62rem 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; margin: 16px 0 4px; }
+    .error { color: #b8402d; margin-top: 14px; font-size: .8rem; }
+    @media (max-width: 760px) { main { padding: 22px 17px 50px; } header { margin-bottom: 55px; } .status { display: none; } h1 { font-size: 3.8rem; } .workspace { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main>
+    <header><div class="brand"><span class="mark"></span> wanderly</div><div class="status">bridge online / Bengaluru</div></header>
+    <section class="intro"><div class="eyebrow">unstructured input → verified action</div><h1>Make sense of the messy middle.</h1><p>Wanderly turns scattered human signals into a shared, trustworthy picture of what needs to happen next.</p></section>
+    <section class="workspace">
+      <div class="panel">
+        <h2>Drop a signal</h2><p class="panel-copy">Start with the kind of message people actually send. Wanderly will extract the incident, compare reports, and prepare a response.</p>
+        <label for="reportText">What happened?</label>
+        <textarea id="reportText" placeholder="e.g. Massive jam near Silk Board, looks like a bike accident..."></textarea>
+        <div class="demo-row"><button type="button" onclick="useDemo('Massive jam near Silk Board, looks like a bike accident. Traffic has not moved for 20 minutes.', 'voice')">voice note</button><button type="button" onclick="useDemo('Construction has closed the left lane near the flyover. Expect a long delay.', 'field report')">field report</button><button type="button" onclick="useDemo('Two cars collided at the junction. Ambulance is trying to get through.', 'community')">community alert</button></div>
+        <div class="row"><div><label for="incidentId">Incident thread</label><input id="incidentId" value="silk-board-1"></div><div><label for="source">Signal source</label><input id="source" value="voice"></div></div>
+        <button id="submitButton" type="button" onclick="submitReport()">Interpret this signal →</button><div id="error" class="error"></div>
+      </div>
+      <div>
+        <div id="result" class="result empty">Your verified signal will appear here.</div>
+        <div class="panel route"><h2>Emergency travel</h2><p class="panel-copy">See the live response corridor and decide whether help can get through.</p><div class="row"><div><label for="startLat">Start latitude</label><input id="startLat" value="12.9352"></div><div><label for="startLon">Start longitude</label><input id="startLon" value="77.6146"></div><div><label for="endLat">Destination latitude</label><input id="endLat" value="12.9698"></div><div><label for="endLon">Destination longitude</label><input id="endLon" value="77.7500"></div></div><label class="emergency-mode"><input id="emergencyMode" type="checkbox" checked><span><strong>Emergency response mode</strong> · prioritize responder travel</span></label><button type="button" onclick="getRoute()">Plot response route →</button><div id="liveWatch" class="live-watch"><span>Live traffic watch</span><strong>Waiting for route</strong></div><div id="routeResult" class="route-result"></div><div class="map-key"><span>response start</span><span>destination</span></div><div id="responseMap"></div></div>
+        <div class="panel region-panel"><h2>Regional traffic pulse</h2><p class="panel-copy">Wanderly compares regional checkpoints and identifies the heaviest corridor. OpenRouter-only mode uses an estimate.</p><div class="region-select"><div><label for="region">Watch region</label><select id="region"><option value="bengaluru">Bengaluru</option><option value="mumbai">Mumbai</option><option value="delhi">Delhi NCR</option></select></div><button type="button" onclick="refreshRegion()">Refresh region</button></div><div id="regionMeta" class="region-meta">Waiting for regional estimate</div><div id="hotspots"><div class="route-result">Choose a region to see where traffic is heavier.</div></div></div>
+      </div>
+    </section>
+  </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const API = "/api/traffic";
+    const $ = id => document.getElementById(id);
+    const map = L.map('responseMap', { zoomControl: false }).setView([12.95, 77.68], 11);
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    let routeLine;
+    let routeMarkers = [];
+    let watchTimer;
+    let lastRoute;
+    let regionTimer;
+    function useDemo(text, source) { $('reportText').value = text; $('source').value = source; $('reportText').focus(); }
+    function showError(message) { $('error').textContent = message; }
+    async function submitReport() {
+      const button = $('submitButton'); showError(''); button.disabled = true; button.textContent = 'Reading the signal...';
+      try {
+        const res = await fetch(API + "/incident/" + encodeURIComponent($('incidentId').value) + "/report", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: $('reportText').value, source: $('source').value }) });
+        const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Could not interpret this signal.'); renderConsensus(data);
+      } catch (error) { showError(error.message); } finally { button.disabled = false; button.textContent = 'Interpret this signal →'; }
+    }
+    function renderConsensus(data) {
+      const c = data.consensus; const confidence = Math.round((c.confidence || 0) * 100); const result = $('result'); result.className = 'result';
+      const action = c.severity === 'high' ? 'Alert emergency responders and keep the corridor clear.' : 'Share a delay warning and suggest an alternate corridor.';
+      const handoff = 'WANDERLY HANDOFF\n' + c.incidentType.toUpperCase() + ' / ' + c.severity.toUpperCase() + '\n' + c.estimatedDelayMinutes + ' minute estimated delay\nNEXT: ' + action;
+      window.currentHandoff = handoff;
+      result.innerHTML = '<h3>Wanderly interpretation / ready for review</h3><div class="signal"><div class="metric"><small>Signal type</small><strong>' + c.incidentType + '</strong></div><div class="metric"><small>Severity</small><strong>' + c.severity + '</strong></div><div class="metric"><small>Estimated delay</small><strong>' + c.estimatedDelayMinutes + ' min</strong></div><div class="metric"><small>Confidence / ' + confidence + '%</small><div class="confidence"><span style="width:' + confidence + '%"></span></div></div></div><div class="reasoning">' + (c.reasoning || 'A second signal will help Wanderly corroborate this report.') + '<br><br><small>' + data.reports.length + ' signal' + (data.reports.length === 1 ? '' : 's') + ' in thread · ' + c.agreementLevel + '</small></div><div class="capsule"><div class="capsule-title">The handoff capsule</div><p>' + action + '</p><button type="button" onclick="copyHandoff()">Copy action brief →</button></div>';
+    }
+    async function copyHandoff() { try { await navigator.clipboard.writeText(window.currentHandoff); const button = document.querySelector('.capsule button'); button.textContent = 'Copied to clipboard'; setTimeout(() => button.textContent = 'Copy action brief →', 1800); } catch (error) { showError('Clipboard access is unavailable in this browser.'); } }
+    async function getRoute() {
+      $('routeResult').textContent = 'Checking live route conditions...';
+      try { const startLat = parseFloat($('startLat').value); const startLon = parseFloat($('startLon').value); const endLat = parseFloat($('endLat').value); const endLon = parseFloat($('endLon').value); lastRoute = { startLat, startLon, endLat, endLon }; const res = await fetch(API + "/incident/" + encodeURIComponent($('incidentId').value) + "/route", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastRoute) }); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Route check failed.'); renderRoute(data, startLat, startLon, endLat, endLon); startTrafficWatch(); } catch (error) { $('routeResult').textContent = error.message; }
+    }
+    function renderRoute(data, startLat, startLon, endLat, endLon) {
+      const emergency = $('emergencyMode').checked; const coordinates = data.route.geometry.coordinates.map(point => [point[1], point[0]]);
+      if (routeLine) map.removeLayer(routeLine); routeMarkers.forEach(marker => map.removeLayer(marker));
+      routeLine = L.polyline(coordinates, { color: emergency ? '#1769aa' : '#102a43', weight: 6, opacity: .9 }).addTo(map);
+      routeMarkers = [L.circleMarker([startLat, startLon], { radius: 8, color: '#102a43', fillColor: '#8bd3ff', fillOpacity: 1, weight: 2 }).bindTooltip(emergency ? 'Response team' : 'Start').addTo(map), L.circleMarker([endLat, endLon], { radius: 8, color: '#102a43', fillColor: '#e05a47', fillOpacity: 1, weight: 2 }).bindTooltip('Destination').addTo(map)];
+      map.fitBounds(routeLine.getBounds(), { padding: [22, 22] });
+      $('routeResult').innerHTML = '<br><strong>' + (data.route.distanceMeters / 1000).toFixed(1) + ' km</strong> · ' + (data.route.etaSeconds / 60).toFixed(0) + ' min ETA<br>Corridor status: <strong>' + (data.verifiedByRoute ? 'congestion verified' : 'moving normally') + '</strong><br><strong>' + (emergency ? 'Response route ready' : 'Travel route ready') + '</strong>';
+      const watch = $('liveWatch'); watch.className = 'live-watch' + (data.verifiedByRoute ? ' heavy' : ''); watch.innerHTML = '<span>Live traffic watch · just now</span><strong>' + (data.verifiedByRoute ? 'Traffic heavier here' : 'Moving normally') + '</strong>';
+    }
+    function startTrafficWatch() { clearInterval(watchTimer); watchTimer = setInterval(() => refreshTraffic(), 30000); }
+    async function refreshTraffic() { if (!lastRoute) return; const watch = $('liveWatch'); watch.querySelector('span').textContent = 'Live traffic watch · checking...'; try { const res = await fetch(API + "/incident/" + encodeURIComponent($('incidentId').value) + "/route", { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(lastRoute) }); const data = await res.json(); if (res.ok) renderRoute(data, lastRoute.startLat, lastRoute.startLon, lastRoute.endLat, lastRoute.endLon); } catch (error) { watch.querySelector('span').textContent = 'Live traffic watch · offline'; } }
+    async function refreshRegion() { const region = $('region').value; $('regionMeta').textContent = 'Checking regional estimate for ' + region + '...'; try { const res = await fetch(API + '/region/' + region + '/live'); const data = await res.json(); if (!res.ok) throw new Error(data.error || 'Regional estimate unavailable.'); const worst = data.checkpoints[0]; $('regionMeta').textContent = 'Estimate · updated ' + new Date(data.updatedAt).toLocaleTimeString() + ' · heaviest corridor: ' + worst.name; $('hotspots').innerHTML = data.checkpoints.map(point => '<div class="hotspot ' + (point.status === 'heavy' ? 'heavy' : '') + '"><div><strong>' + point.name + '</strong><small>' + point.currentSpeedKmph + ' km/h · free flow ' + point.freeFlowSpeedKmph + ' km/h</small></div><strong>' + point.congestionPercent + '% slower</strong><div class="bar"><span style="width:' + Math.min(100, point.congestionPercent) + '%"></span></div></div>').join(''); } catch (error) { $('regionMeta').textContent = 'Regional estimate unavailable'; $('hotspots').innerHTML = '<div class="route-result">' + error.message + '</div>'; } }
+    $('region').addEventListener('change', refreshRegion);
+    refreshRegion();
+    regionTimer = setInterval(refreshRegion, 30000);
+  </script>
+</body>
+</html>
